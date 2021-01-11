@@ -6,6 +6,7 @@ import mithril from "mithril";
 import FlowCode from "./flowCode";
 import FlowControlComponent from "./flowControlComponent";
 import FlowControl from "./flowControl";
+import { completeAssign } from "../objectSupply";
 export default class FlowGraph {
   constructor(selector) {
     this.root = document.querySelector(selector);
@@ -97,7 +98,10 @@ export default class FlowGraph {
     return this.code.getValue(n);
   }
   addComponent(name, properties, style) {
-    const component = new GraphComponents[`components_${name}`](properties, style);
+    const component = new GraphComponents[`components_${name}`](
+      completeAssign({ componentName: name }, properties ?? {}),
+      style
+    );
     component.init(this);
     return component;
   }

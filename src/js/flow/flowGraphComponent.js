@@ -43,7 +43,7 @@ export default class FlowGraphComponent extends FlowGraphBasic {
 
     completeAssign(properties, { graph: this });
     this.control = null;
-    this.setCode(new Components[this.constructor.name](properties));
+    this.setCode(new Components[`components_${properties.componentName}`](properties));
   }
   oncreate(vnode) {
     const size = getElementSize(vnode.dom);
@@ -212,7 +212,7 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       "div.flowGraph",
       {
         key: this._id,
-        class: `flow_${this.code.constructor.name} 
+        class: `flow_${this.code.properties.componentName} 
         ${this.self._active ? "active" : ""} ${this.self._select ? "select" : ""} ${this.self._hover ? "hover" : ""}`,
         style: this.self.calcStyle(),
       },
