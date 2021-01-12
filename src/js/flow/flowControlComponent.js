@@ -70,6 +70,19 @@ export default class FlowControlComponent extends Listener {
   setCollisionGraph(collisionGraph) {
     this.collisionGraph = collisionGraph;
   }
+  rectHitTest(pos, size) {
+    const rectCollisionRect = (pos0, size0, pos1, size1) => {
+      return (
+        pos0[0] <= pos1[0] + size1[0] &&
+        pos1[0] <= pos0[0] + size0[0] &&
+        pos0[1] <= pos1[1] + size1[1] &&
+        pos1[1] <= pos0[1] + size0[1]
+      );
+    };
+    if (this.collisionGraph.type == "rect") {
+      return rectCollisionRect(pos, size, this.collisionGraph.pos, this.collisionGraph.size);
+    }
+  }
   add(control) {
     control.parent = this;
     this.children.push(control);

@@ -24,9 +24,13 @@ export class Drag extends Listener {
     this.element = element;
     this.mousedown = false;
     const mousePos = [0, 0];
+    const stopDrag = () => {
+      this.mousedown = false;
+    };
     const start = (ev) => {
       if (!this.mousedown) {
         ev.register = this;
+        ev.stopDrag = stopDrag;
         this.mousedown = true;
 
         const item = ev.touches ? ev.touches[0] : ev;
@@ -41,6 +45,7 @@ export class Drag extends Listener {
     const move = (ev) => {
       if (this.mousedown) {
         ev.register = this;
+        ev.stopDrag = stopDrag;
 
         const item = ev.touches ? ev.touches[0] : ev;
         const newMousePos = [0, 0];
@@ -58,6 +63,7 @@ export class Drag extends Listener {
     const end = (ev) => {
       if (this.mousedown) {
         ev.register = this;
+        ev.stopDrag = stopDrag;
         this.mousedown = false;
 
         const item = ev.touches ? ev.touches[0] : ev;

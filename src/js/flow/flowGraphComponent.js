@@ -2,7 +2,6 @@ import { Vector, VectorE } from "../vector";
 import mithril from "mithril";
 import FlowGraphVnode from "./flowGraphVnode";
 import FlowGraphBasic from "./flowGraphBasic";
-import * as Components from "./components";
 import { completeAssign } from "../objectSupply";
 import { getElementSize } from "../elementSupply";
 import FlowControlComponent from "./flowControlComponent";
@@ -13,48 +12,46 @@ class FlowGraphPutsComponent extends FlowGraphVnode {
       "div",
       { class: vnode.attrs.class },
       vnode.attrs._list.map((el, index) => {
-        return mithril("div", { class: `item ${vnode.attrs._list[index].type}` }, [
+        return mithril("div", { class: `item ${el.data.type} ${el.control.src.hover ? "hover" : ""}` }, [
           mithril("div", { class: "point" }),
-          mithril("div", { class: "text", textContent: vnode.attrs._list[index].name }),
+          mithril("div", { class: "text", textContent: el.data.name }),
         ]);
       })
     );
   }
 }
-class FlowGraphSlot extends FlowGraphVnode {
-  view(vnode) {
-    //console.log("view");
-    return vnode.attrs._vnodeList.map((el) => mithril(el));
-  }
-}
 export default class FlowGraphComponent extends FlowGraphBasic {
-  constructor(properties = {}, style = {}) {
+  constructor(code, style = {}) {
     super();
     this.inputLineList = [];
     this.outputLineList = [];
+    this.inputList = [];
+    this.outputList = [];
 
     this.putsRedraw = false;
-
-    this.slots = [];
-    this.slotsRedraw = false;
 
     this.style = { pos: [0, 0], size: [undefined, undefined], zindex: undefined };
     completeAssign(this.style, style);
 
-    completeAssign(properties, { graph: this });
     this.control = null;
-    this.setCode(new Components[`components_${properties.componentName}`](properties));
+    this.setCode(code);
   }
   oncreate(vnode) {
-    const size = getElementSize(vnode.dom);
-    size[0] = this.self.style.size[0] ?? size[0];
-    size[1] = this.self.style.size[1] ?? size[1];
     this.self.element = vnode.dom;
-    this.self.size = size;
+    this.self.resize();
+  }
+  resize() {
+    const size = getElementSize(this.element);
+    size[0] = this.style.size[0] ?? size[0];
+    size[1] = this.style.size[1] ?? size[1];
+    this.size = size;
+  }
+  onupdate(vnode) {
+    super.onupdate(vnode);
+    this.self.putsRedraw = false;
   }
   init(root) {
     this.root = root;
-    this.root.code.add(this.code);
     this.zindex = this.root.code.list.length;
     this.control = this.createControl();
     if (this.control) {
@@ -66,10 +63,17 @@ export default class FlowGraphComponent extends FlowGraphBasic {
     main.setCollisionGraph({ type: "rect", pos: this.pos, size: this.size });
     main.src = this;
     main.on("start", (ev) => {
-      this.root.setOperate("selectActive");
+      if (!this.select) {
+        this.root.setOperate("");
+        this.root.selectRange = [main];
+        this.root.setOperate("selectActive");
+      }
+      if (main.parent) {
+        main.parent.setTop(this.root.selectList);
+      }
       ev.stopPropagation();
     });
-    main.on("drag", (ev) => {
+    main.on("selectDrag", (ev) => {
       if (this.root.operate == "selectActive") {
         if (this.select) {
           this.pos = Vector.add(this.pos, ev.movePos);
@@ -77,6 +81,7 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       }
       ev.stopPropagation();
     });
+
     main.on("end", (ev) => {});
     main.on("select", (ev) => {
       this.select = true;
@@ -91,8 +96,21 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       this.hover = false;
     });
     const that = this;
-    this.code.inputList.forEach((el, index) => {
+    this.inputList = this.code.inputList.map((el, index) => {
       const sub = new FlowControlComponent();
+      const data = { hover: false };
+      const obj = {
+        get hover() {
+          return data.hover;
+        },
+        set hover(val) {
+          data.hover = val;
+          that.redraw = true;
+          that.putsRedraw = true;
+          mithril.redraw();
+        },
+      };
+      sub.src = obj;
       sub.setCollisionGraph({
         type: "rect",
         get pos() {
@@ -102,41 +120,58 @@ export default class FlowGraphComponent extends FlowGraphBasic {
           return [10, 10];
         },
       });
+      sub.on("enter", (ev) => {
+        obj.hover = true;
+        ev.stopPropagation();
+      });
+      sub.on("leave", (ev) => {
+        obj.hover = false;
+        ev.stopPropagation();
+      });
       sub.on("start", (ev) => {
+        this.root.setOperate("");
         ev.stopPropagation();
       });
       sub.on("release", (ev) => {
         if (this.root.operate == "connectLine") {
-          //console.log(that.root.connectLine.input, that.root.connectLine.output);
           if (that.root.connectLine.input && that.root.connectLine.output) {
             const input = that.root.connectLine.input;
             const output = that.root.connectLine.output;
-            const line = that.root.connect(output.component, output.num, input.component, input.num);
-            if (line) {
-              line.startPos = output.component.getOutputPos(output.num);
-              line.endPos = input.component.getInputPos(input.num);
-            }
+            that.root.connect(output.component, output.num, input.component, input.num);
           }
-          that.root.connectLine = {};
-          ev.stopPropagation();
           this.root.setOperate("");
+          ev.stopPropagation();
         }
       });
       sub.on("dragEnter", (ev) => {
         if (this.root.operate == "connectLine") {
           console.log("拖曳滑入");
           that.root.connectLine.input = { component: that, num: index };
+          ev.stopPropagation();
         }
       });
-      sub.on("end", (ev) => {
+      sub.on("click", (ev) => {
         this.removeInputConnect(index);
-        //console.log(this.code.inputList[index]);
         ev.stopPropagation();
       });
       main.add(sub);
+      return { control: sub, data: el };
     });
-    this.code.outputList.forEach((el, index) => {
+    this.outputList = this.code.outputList.map((el, index) => {
       const sub = new FlowControlComponent();
+      const data = { hover: false };
+      const obj = {
+        get hover() {
+          return data.hover;
+        },
+        set hover(val) {
+          data.hover = val;
+          that.redraw = true;
+          that.putsRedraw = true;
+          mithril.redraw();
+        },
+      };
+      sub.src = obj;
       sub.setCollisionGraph({
         type: "rect",
         get pos() {
@@ -146,32 +181,42 @@ export default class FlowGraphComponent extends FlowGraphBasic {
           return [10, 10];
         },
       });
-      sub.on("start", (ev) => {
-        this.root.setOperate("connectLine");
-        this.root.graphLine.startPos = that.getOutputPos(index);
-        this.root.graphLine.endPos = ev.mousePos;
-        that.root.connectLine = {};
+      sub.on("enter", (ev) => {
+        obj.hover = true;
         ev.stopPropagation();
       });
-      sub.on("drag", (ev) => {
-        if (this.root.operate == "connectLine") {
-          this.root.graphLine.endPos = ev.mousePos;
-          ev.stopPropagation();
-        }
+      sub.on("leave", (ev) => {
+        obj.hover = false;
+        ev.stopPropagation();
+      });
+      sub.on("start", (ev) => {
+        this.root.setOperate("");
+        ev.stopPropagation();
       });
       sub.on("dragLeave", (ev) => {
-        if (this.root.operate == "connectLine") {
-          console.log("拖曳滑出");
-          that.root.connectLine.output = { component: that, num: index };
+        console.log("拖曳滑出");
+        that.root.connectLine.output = { component: that, num: index };
+        this.root.setOperate("connectLine");
+        ev.stopPropagation();
+      });
+
+      sub.on("click", (ev) => {
+        if (this.root.operate != "connectLine") {
+          if (!that.root.connectLine.output) {
+            this.removeOutputConnect(index);
+            ev.stopPropagation();
+          }
         }
       });
       main.add(sub);
+      return { control: sub, data: el };
     });
 
     return main;
   }
   setCode(code) {
     this.code = code;
+    this.code.properties.graph = this;
     this.code.on("trigger", (n, output) => {
       this._activeTime = this.root.time;
       if (this.outputLineList[n]) {
@@ -185,9 +230,6 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       this.update();
     });
     this.code.on("outputsComplete", (n, src) => {
-      if (this.slots.length) {
-        this.slotsRedraw = true;
-      }
       this.update();
     });
   }
@@ -217,21 +259,18 @@ export default class FlowGraphComponent extends FlowGraphBasic {
         style: this.self.calcStyle(),
       },
       [
-        mithril("div.title", { textContent: this.code.properties.title }),
+        mithril("div.title", this.self.getTitle()),
         mithril("div.wrap", [
           mithril("div.content", [
             mithril(FlowGraphPutsComponent, {
               class: "inputs",
-              _list: this.code.inputList,
+              _list: this.self.inputList,
               redraw: this.self.putsRedraw,
             }),
-            mithril(
-              "div.slotContent",
-              mithril(FlowGraphSlot, { _vnodeList: this.self.slots, redraw: this.self.slotsRedraw })
-            ),
+            mithril("div.slotContent", this.self.getSlots()),
             mithril(FlowGraphPutsComponent, {
               class: "outputs",
-              _list: this.code.outputList,
+              _list: this.self.outputList,
               redraw: this.self.putsRedraw,
             }),
           ]),
@@ -239,11 +278,15 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       ]
     );
   }
+  getTitle() {
+    return mithril("div", { textContent: this.code.properties.title ?? this.code.properties.componentName });
+  }
+  getSlots() {}
   getInputPos(n) {
     return Vector.add(this.style.pos, [10, 30 + 25 * (n + 0.5)]);
   }
   getOutputPos(n) {
-    return Vector.add(this.style.pos, [this.style.size[0] - 10, 30 + 25 * (n + 0.5)]);
+    return Vector.add(this.style.pos, [(this.style.size[0] ?? 0) - 10, 30 + 25 * (n + 0.5)]);
   }
   addInputLine(n, component) {
     if (!this.inputLineList[n]) {
@@ -259,16 +302,9 @@ export default class FlowGraphComponent extends FlowGraphBasic {
   }
   removeInputConnect(n) {
     this.code.removeInputConnect(n);
-    this.inputLineList[n].forEach((el) => {
-      const line = el;
-      const num = el.code.output.num;
-      const output = el.code.output.component.properties.graph;
-      output.outputLineList[num] = output.outputLineList[num].filter((el) => {
-        return line != el;
-      });
-    });
-    this.inputLineList[n] = [];
-    mithril.redraw();
+  }
+  removeOutputConnect(n) {
+    this.code.removeOutputConnect(n);
   }
   get zindex() {
     return this.style.zindex;

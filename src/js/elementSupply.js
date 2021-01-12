@@ -51,6 +51,7 @@ export class ElementMouseCompose extends Listener {
   init(element) {
     this.element = element;
     const mousePos = [0, 0];
+    let currentTarget = null;
     const start = (ev) => {
       ev.register = this;
       const item = ev.touches ? ev.touches[0] : ev;

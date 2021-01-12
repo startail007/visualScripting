@@ -25,18 +25,15 @@ export default class FlowCodeComponent extends Listener {
     this.outputList.push({ name, type, connectList: [], data: { bool: false, value: undefined } });
   }
   removeInputConnect(n) {
-    this.resetOutputs();
     const input = this.inputList[n];
     input.connectList.forEach((el) => {
-      const output = el.component.outputList[el.num];
-      output.connectList = output.connectList.filter((el) => {
-        return el.component != this || el.num != n;
-      });
-      input.data = null;
+      this.root.unconnect(el.component, el.num, this, n);
     });
-    input.connectList = [];
-    this.root.connectList = this.root.connectList.filter((el) => {
-      return el.input.component != this || el.input.num != n;
+  }
+  removeOutputConnect(n) {
+    const output = this.outputList[n];
+    output.connectList.forEach((el) => {
+      this.root.unconnect(this, n, el.component, el.num);
     });
   }
   getInputValue(n) {
