@@ -1,6 +1,6 @@
 import FlowGraphVnode from "./flowGraphVnode";
 import mithril from "mithril";
-export default class FlowGraphBasic extends FlowGraphVnode {
+export default class FlowViewBasic extends FlowGraphVnode {
   constructor() {
     super();
     this._active = false;

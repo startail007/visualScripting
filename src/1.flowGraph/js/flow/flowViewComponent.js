@@ -1,9 +1,9 @@
-import { Vector, VectorE } from "../vector";
+import { Vector, VectorE } from "../../../js/vector";
 import mithril from "mithril";
 import FlowGraphVnode from "./flowGraphVnode";
-import FlowGraphBasic from "./flowGraphBasic";
-import { completeAssign } from "../objectSupply";
-import { getElementSize } from "../elementSupply";
+import FlowViewBasic from "./flowViewBasic";
+import { completeAssign } from "../../../js/objectSupply";
+import { getElementSize } from "../../../js/elementSupply";
 import FlowControlComponent from "./flowControlComponent";
 
 class FlowGraphPutsComponent extends FlowGraphVnode {
@@ -20,7 +20,7 @@ class FlowGraphPutsComponent extends FlowGraphVnode {
     );
   }
 }
-export default class FlowGraphComponent extends FlowGraphBasic {
+export default class FlowViewComponent extends FlowViewBasic {
   constructor(code, style = {}) {
     super();
     this.inputLineList = [];
@@ -229,7 +229,7 @@ export default class FlowGraphComponent extends FlowGraphBasic {
       this._activeTime = this.root.time;
       this.update();
     });
-    this.code.on("outputsComplete", (n, src) => {
+    this.code.on("calcComplete", (n, src) => {
       this.update();
     });
   }
@@ -381,11 +381,10 @@ export default class FlowGraphComponent extends FlowGraphBasic {
     });
   }
   update() {
-    this.redraw = true;
-    this.code.getOutputComponent().forEach((el) => {
-      if (el.type != "flow") {
-        el.properties.graph.update();
-      }
+    const list = Array.from(this.code.getValTriggerList());
+    list.forEach((el) => {
+      el.properties.graph.redraw = true;
     });
+    mithril.redraw();
   }
 }

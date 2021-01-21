@@ -1,7 +1,8 @@
 import "./index.scss";
-import FlowGraph from "../js/flow/flowGraph";
+import FlowGraph from "./js/flow/flowGraph";
 
 const flowGraph = new FlowGraph("#graph");
+
 flowGraph.addValue("a0", 3);
 flowGraph.addValue("a1", 6);
 flowGraph.addValue("a2", true);
@@ -39,11 +40,8 @@ flowGraph.connect(flowGraphComponent09, 2, flowGraphComponent14, 0);
 
 const update = (time) => {
   requestAnimationFrame(update);
-  if (Math.random() > 0.99) {
+  if (Math.random() > 0.5) {
     flowGraph.setValue("a2", !flowGraph.getValue("a2"));
   }
 };
 update();
-/*setTimeout(() => {
-  flowGraph.setValue("a0", 20);
-}, 1000);*/

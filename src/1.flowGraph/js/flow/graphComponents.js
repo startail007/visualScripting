@@ -1,15 +1,15 @@
-import FlowGraphComponent from "./flowGraphComponent";
+import FlowViewComponent from "./flowViewComponent";
 import mithril from "mithril";
 
-export class components_getValue extends FlowGraphComponent {
+export class component_getValue extends FlowViewComponent {
   getTitle() {
     return [super.getTitle(), mithril("div", `變數 ${this.code.properties.refName}`)];
   }
   getSlots() {
-    return mithril("div.refvalue", `${this.code.properties.value}`);
+    return mithril("div.refvalue", `${this.code.getValue()}`);
   }
 }
-export class components_setValue extends FlowGraphComponent {
+export class component_setValue extends FlowViewComponent {
   getTitle() {
     return [super.getTitle(), mithril("div", `變數 ${this.code.properties.refName}`)];
   }
@@ -34,18 +34,18 @@ export class components_setValue extends FlowGraphComponent {
     });
   }
 }
-export class components_add extends FlowGraphComponent {}
-export class components_watch extends FlowGraphComponent {
+export class component_add extends FlowViewComponent {}
+export class component_watch extends FlowViewComponent {
   getSlots() {
     return mithril("div.text", {
       textContent: this.code.getInputValue(0),
     });
   }
 }
-export class components_ticker extends FlowGraphComponent {}
-export class components_branch extends FlowGraphComponent {}
-export class components_box extends FlowGraphComponent {}
-export class components_button extends FlowGraphComponent {
+export class component_ticker extends FlowViewComponent {}
+export class component_branch extends FlowViewComponent {}
+export class component_box extends FlowViewComponent {}
+export class component_button extends FlowViewComponent {
   getSlots() {
     return mithril(
       "button",

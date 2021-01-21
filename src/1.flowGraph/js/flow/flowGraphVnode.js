@@ -1,4 +1,4 @@
-import { Float } from "../float";
+import { Float } from "../../../js/float";
 export default class FlowGraphVnode {
   constructor() {
     this._id = Float.guid();

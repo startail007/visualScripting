@@ -1,6 +1,6 @@
-import { Float } from "../float";
-import Listener from "../listener";
-import { completeAssign } from "../objectSupply";
+import { Float } from "../../../js/float";
+import Listener from "../../../js/listener";
+import { completeAssign } from "../../../js/objectSupply";
 const bubbleLoop = (control, fun) => {
   if (control) {
     let bool = true;

@@ -6,13 +6,17 @@ export const setElementPos = (element, pos) => {
   element.style.left = pos[0] + "px";
   element.style.top = pos[1] + "px";
 };
+export const setElementSize = (element, size) => {
+  element.style.width = size[0] + "px";
+  element.style.height = size[1] + "px";
+};
 export const getElementPos = (element) => {
   return [element.offsetLeft, element.offsetTop];
 };
 export const getElementSize = (element) => {
   return [element.offsetWidth, element.offsetHeight];
 };
-export const getElementPagePos = (element) => {
+/*export const getElementPagePos = (element) => {
   const pos = [0, 0];
   let m = element;
   while (m) {
@@ -21,7 +25,23 @@ export const getElementPagePos = (element) => {
     m = m.parentElement;
   }
   const rect = element.getBoundingClientRect();
-  return [rect.x + pos[0], rect.y + pos[1]];
+  return [rect.x + pos[0], rect.y + pos[1]];  
+};*/
+export const getElementPagePos = (element) => {
+  if (element) {
+    const pos = getElementPos(element);
+    VectorE.add(pos, [element.scrollLeft ?? 0, element.scrollTop ?? 0]);
+    VectorE.add(pos, getElementPagePos(element.parentElement) ?? [0, 0]);
+    return pos;
+  }
+};
+export const getElementTargetPos = (element, target) => {
+  if (element && element != target) {
+    const pos = getElementPos(element);
+    VectorE.add(pos, [element.scrollLeft ?? 0, element.scrollTop ?? 0]);
+    VectorE.add(pos, getElementTargetPos(element.parentElement, target) ?? [0, 0]);
+    return pos;
+  }
 };
 export const createElement = (tag, attributes = {}, textContent = "") => {
   const element =

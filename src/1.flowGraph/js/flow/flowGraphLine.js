@@ -1,9 +1,8 @@
-import { Vector, VectorE } from "../vector";
-import { Float } from "../float";
+import { Vector, VectorE } from "../../../js/vector";
+import { Float } from "../../../js/float";
 import mithril from "mithril";
-import FlowGraphBasic from "./flowGraphBasic";
-import { completeAssign } from "../objectSupply";
-export default class FlowGraphLine extends FlowGraphBasic {
+import FlowViewBasic from "./flowViewBasic";
+export default class FlowGraphLine extends FlowViewBasic {
   constructor() {
     super();
     this.root = null;

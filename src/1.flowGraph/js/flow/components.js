@@ -1,28 +1,26 @@
 import FlowCodeComponent from "./flowCodeComponent";
-import { completeAssign } from "../objectSupply";
+import { completeAssign } from "../../../js/objectSupply";
 
-export class components_getValue extends FlowCodeComponent {
+export class component_getValue extends FlowCodeComponent {
   init(root) {
     super.init(root);
-    const that = this;
-    completeAssign(this.properties, {
-      get value() {
-        return root.getValue(that.properties.refName);
-      },
-      set value(val) {
-        root.setValue(that.properties.refName, val);
-      },
-    });
     const data = root.valueList[this.properties.refName];
-    data.list.push(this);
-    this.addOutput("val", data.type);
+    root.valueList.on("change", (key, val, oldVal) => {
+      if (this.properties.refName == key) {
+        this.nextFlow();
+      }
+    });
+    this.addOutput("val", data.constructor.name);
   }
   calcOutputs(valueList) {
-    this.setOutputValue(0, this.properties.value);
+    this.setOutputValue(0, this.getValue());
+  }
+  getValue() {
+    return this.root.getValue(this.properties.refName);
   }
 }
 
-export class components_setValue extends FlowCodeComponent {
+export class component_setValue extends FlowCodeComponent {
   constructor(properties = {}) {
     super(properties);
     this.type = "flow";
@@ -39,7 +37,7 @@ export class components_setValue extends FlowCodeComponent {
     });
   }
 }
-export class components_add extends FlowCodeComponent {
+export class component_add extends FlowCodeComponent {
   init(root) {
     super.init(root);
     this.addInput("num0", "Number");
@@ -53,14 +51,14 @@ export class components_add extends FlowCodeComponent {
     this.setOutputValue(0, valueList[0] + valueList[1]);
   }
 }
-export class components_watch extends FlowCodeComponent {
+export class component_watch extends FlowCodeComponent {
   init(root) {
     super.init(root);
     this.addInput("val", "Number");
   }
   calcOutputs(valueList) {}
 }
-export class components_ticker extends FlowCodeComponent {
+export class component_ticker extends FlowCodeComponent {
   constructor(properties = {}) {
     super(properties);
     this.type = "flow";
@@ -74,7 +72,7 @@ export class components_ticker extends FlowCodeComponent {
   }
 }
 
-export class components_branch extends FlowCodeComponent {
+export class component_branch extends FlowCodeComponent {
   constructor(properties = {}) {
     super(properties);
     this.type = "flow";
@@ -87,7 +85,7 @@ export class components_branch extends FlowCodeComponent {
     this.addOutput("false", "Exec");
     this.addOutput("out", "Number");
     this.on("action", (n, src) => {
-      if (this.getInputBool(1)) {
+      if (this.getInputValue(1) !== undefined) {
         this.trigger(this.getInputValue(1) ? 0 : 1);
       }
     });
@@ -100,7 +98,7 @@ export class components_branch extends FlowCodeComponent {
   }
 }
 
-export class components_box extends FlowCodeComponent {
+export class component_box extends FlowCodeComponent {
   constructor(properties = {}) {
     super(properties);
     this.type = "flow";
@@ -114,7 +112,7 @@ export class components_box extends FlowCodeComponent {
     });
   }
 }
-export class components_button extends FlowCodeComponent {
+export class component_button extends FlowCodeComponent {
   constructor(properties = {}) {
     super(properties);
     this.type = "flow";

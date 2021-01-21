@@ -1,6 +1,6 @@
-import { Drag, DragEventType } from "../drag";
-import { ElementMouseCompose, getElementPos, getElementSize } from "../elementSupply";
-import { Vector, VectorE } from "../vector";
+import { Drag, DragEventType } from "../../../js/drag";
+import { ElementMouseCompose, getElementPos, getElementSize } from "../../../js/elementSupply";
+import { Vector, VectorE } from "../../../js/vector";
 import FlowControlComponent from "./flowControlComponent";
 
 export default class FlowControl extends FlowControlComponent {

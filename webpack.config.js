@@ -25,6 +25,8 @@ module.exports = {
   entry: {
     //main: "./src/js/index.js",
     "./1.flowGraph/js/main": "./src/1.flowGraph/index.js",
+    "./1.flowGraph-1/js/main": "./src/1.flowGraph-1/index.js",
+    "./3.mvp/js/main": "./src/3.mvp/index.js",
     "./2.litegraph/js/main": "./src/2.litegraph/index.js",
   },
   output: {
@@ -170,11 +172,25 @@ module.exports = {
       chunks: ["./1.flowGraph/js/main"],
     }),
     new HtmlWebpackPlugin({
+      title: "1.flowGraph-1",
+      template: "./src/1.flowGraph-1/index.html",
+      filename: "1.flowGraph-1/index.html",
+      hash: true,
+      chunks: ["./1.flowGraph-1/js/main"],
+    }),
+    new HtmlWebpackPlugin({
       title: "2.litegraph",
       template: "./src/2.litegraph/index.html",
       filename: "2.litegraph/index.html",
       hash: true,
       chunks: ["./2.litegraph/js/main"],
+    }),
+    new HtmlWebpackPlugin({
+      title: "3.mvp",
+      template: "./src/3.mvp/index.html",
+      filename: "3.mvp/index.html",
+      hash: true,
+      chunks: ["./3.mvp/js/main"],
     }),
     new OptimizeCssAssetsWebpackPlugin(),
   ],

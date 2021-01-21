@@ -22,12 +22,17 @@ export default class Listener {
       return this.listenerList[type].map((el) => el(...data));
     }
   }
-  get(type, n, ...data) {
+  /*get(type, n, ...data) {
     return new Promise((resolve, reject) => {
       if (this.listenerList[type]) {
         this.listenerList[type][n ?? 0](resolve, reject, ...data);
       }
     });
+  }*/
+  get(type, n, ...data) {
+    if (this.listenerList[type]) {
+      return this.listenerList[type][n ?? 0](...data);
+    }
   }
   has(type) {
     return !!this.listenerList[type];

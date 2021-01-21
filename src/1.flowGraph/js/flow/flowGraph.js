@@ -1,11 +1,31 @@
 import FlowGraphLine from "./flowGraphLine";
+import * as Components from "./components";
 import * as GraphComponents from "./graphComponents";
 import mithril from "mithril";
-import FlowCode from "./flowCode";
 import FlowControl from "./flowControl";
-import { completeAssign } from "../objectSupply";
-import FlowGraphBasic from "./flowGraphBasic";
-class FlowValueMenu extends FlowGraphBasic {
+import FlowViewBasic from "./flowViewBasic";
+import { completeAssign } from "../../../js/objectSupply";
+import FlowCodeComponent from "./flowCodeComponent";
+class FlowMenu extends FlowViewBasic {
+  constructor() {
+    super();
+    this.valueList = {};
+    this.flowGraphList = [];
+  }
+  view(vnode) {
+    return mithril("div.sideMenu", [
+      mithril("div", [
+        mithril("div.title", "變數"),
+        mithril(
+          "div.content",
+          Object.values(this.self.valueList).map((el) => mithril(el))
+        ),
+      ]),
+      mithril("div", [mithril("div.title", "指令"), mithril("div.content")]),
+    ]);
+  }
+}
+class FlowValueMenu extends FlowViewBasic {
   constructor() {
     super();
     this.root = null;
@@ -20,7 +40,7 @@ class FlowValueMenu extends FlowGraphBasic {
       mithril("div.name", `${this.self.data.name}`),
       mithril("input.inputText", {
         type: "text",
-        value: this.data.value,
+        value: this.root.getValue(this.refName),
         onmousedown: (ev) => {
           ev.stopPropagation();
         },
@@ -38,6 +58,8 @@ class FlowValueMenu extends FlowGraphBasic {
           }
         },
       }),
+      mithril("div.button", "get"),
+      mithril("div.button", "set"),
     ]);
   }
 }
@@ -50,10 +72,7 @@ export default class FlowGraph {
     this.connectLine = {};
     this.graphLine = new FlowGraphLine();
 
-    this.menu = {
-      valueList: {},
-      flowGraphList: [],
-    };
+    this.menu = new FlowMenu();
 
     this.selectList = [];
     this.selectRange = [];
@@ -82,7 +101,7 @@ export default class FlowGraph {
       }
     });
 
-    this.setCode(new FlowCode());
+    this.setCode(new FlowCodeComponent());
     const loop = (time) => {
       requestAnimationFrame(loop);
       this.time = time;
@@ -126,13 +145,19 @@ export default class FlowGraph {
   }
   setCode(code) {
     this.code = code;
-    this.code.on("setValue", (data) => {
-      data.list.forEach((el) => {
-        el.properties.graph.update();
-      });
-      this.menu.valueList[data.name].redraw = true;
+    this.code.on("addValue", (name, val) => {
+      const component = new FlowValueMenu();
+      component.root = this;
+      component.refName = name;
+      component.setData({ type: val.constructor.name, name: name });
+      this.menu.valueList[name] = component;
+    });
+    this.code.on("setValue", (name, val) => {
+      this.menu.redraw = true;
+      this.menu.valueList[name].redraw = true;
       mithril.redraw();
     });
+
     this.code.on("connect", (outComponent, outNum, inComponent, inNum) => {
       outComponent = outComponent.properties.graph;
       inComponent = inComponent.properties.graph;
@@ -155,7 +180,7 @@ export default class FlowGraph {
       });
       inComponent.inputLineList[inNum] = inComponent.inputLineList[inNum].filter((el) => {
         const output = el.output;
-        return output.component != outComponent || output.num != inNum;
+        return output.component != outComponent || output.num != outNum;
       });
       this.connectList = this.connectList.filter((el) => {
         return (
@@ -165,9 +190,9 @@ export default class FlowGraph {
           el.input.num != inNum
         );
       });
-      mithril.redraw();
+      inComponent.update();
     });
-    const operateComponent = {
+    this.operateComponent = {
       view: () => {
         if (this.operate == "select") {
           return mithril("div.selectRect", {
@@ -183,39 +208,25 @@ export default class FlowGraph {
         }
       },
     };
-    const rootComponent = {
-      view: () => [
-        mithril(
-          "svg.svg",
-          { width: "100%", height: "100%" },
-          this.connectList.map((el) => mithril(el, { key: el.id }))
-        ),
-        mithril(
-          "div.flowgraphs",
-          this.code.list.map((el) => mithril(el.properties.graph, { key: el.properties.graph.id }))
-        ),
-        mithril("div.sideMenu", [
-          mithril("div", [
-            mithril("div.title", "變數"),
-            mithril(
-              "div.content",
-              Object.values(this.menu.valueList).map((el) => mithril(el))
-            ),
-          ]),
-          mithril("div", [mithril("div.title", "指令"), mithril("div.content")]),
-        ]),
-        mithril("div.front", [mithril(operateComponent)]),
-      ],
-    };
-    mithril.mount(this.root, rootComponent);
+    mithril.mount(this.root, this);
   }
-  addValue(name, value) {
-    const data = this.code.addValue(name, value);
-    const component = new FlowValueMenu();
-    component.root = this;
-    component.refName = name;
-    component.setData(data);
-    this.menu.valueList[name] = component;
+  view() {
+    return [
+      mithril(
+        "svg.svg",
+        { width: "100%", height: "100%" },
+        this.connectList.map((el) => mithril(el, { key: el.id }))
+      ),
+      mithril(
+        "div.flowgraphs",
+        this.code.list.map((el) => mithril(el.properties.graph, { key: el.properties.graph.id }))
+      ),
+      mithril(this.menu),
+      mithril("div.front", [mithril(this.operateComponent)]),
+    ];
+  }
+  addValue(name, val) {
+    this.code.addValue(name, val);
   }
   setValue(name, val) {
     this.code.setValue(name, val);
@@ -224,8 +235,11 @@ export default class FlowGraph {
     return this.code.getValue(name);
   }
   addComponent(name, properties, style) {
-    const code = this.code.addComponent(name, properties);
-    const component = new GraphComponents[`components_${name}`](code, style);
+    //const code = this.code.addComponent(name, properties);
+    properties = completeAssign({ componentName: name }, properties ?? {});
+    const code = new Components[`component_${name}`](properties);
+    code.init(this.code);
+    const component = new GraphComponents[`component_${name}`](code, style);
     component.init(this);
     return component;
   }
