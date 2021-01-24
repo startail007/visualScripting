@@ -16,7 +16,7 @@ export const getElementPos = (element) => {
 export const getElementSize = (element) => {
   return [element.offsetWidth, element.offsetHeight];
 };
-/*export const getElementPagePos = (element) => {
+export const getElementPagePos = (element) => {
   const pos = [0, 0];
   let m = element;
   while (m) {
@@ -25,16 +25,16 @@ export const getElementSize = (element) => {
     m = m.parentElement;
   }
   const rect = element.getBoundingClientRect();
-  return [rect.x + pos[0], rect.y + pos[1]];  
-};*/
-export const getElementPagePos = (element) => {
+  return [rect.x + pos[0], rect.y + pos[1]];
+};
+/*export const getElementPagePos = (element) => {
   if (element) {
     const pos = getElementPos(element);
     VectorE.add(pos, [element.scrollLeft ?? 0, element.scrollTop ?? 0]);
     VectorE.add(pos, getElementPagePos(element.parentElement) ?? [0, 0]);
     return pos;
   }
-};
+};*/
 export const getElementTargetPos = (element, target) => {
   if (element && element != target) {
     const pos = getElementPos(element);

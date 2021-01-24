@@ -2,8 +2,8 @@ import { objEventDrag } from "../../../js/mithrilSupply";
 import { rectCollisionRect } from "../../../js/supply";
 import * as FlowBox from "./flowBox";
 export class Model extends FlowBox.Model {
-  constructor() {
-    super();
+  init() {
+    super.init();
     this.list = [];
   }
   setList(list) {
@@ -16,7 +16,9 @@ export class Model extends FlowBox.Model {
 export class Presenter extends FlowBox.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
-    this.model.setDisplay(false);
+    this.model.addClass("selectRect");
+    this.view.vnodeClass(this.model.getClass());
+    this.setDisplay(false);
   }
   calcSelectList(list) {
     if (list) {
@@ -50,12 +52,11 @@ export class Presenter extends FlowBox.Presenter {
   setSelectList(list) {
     this.model.setList(list);
   }
+  getAllChildren() {
+    return [];
+  }
   viewUpdate() {
     this.view.render();
   }
 }
-export class View extends FlowBox.View {
-  init() {
-    this.class = "selectRect";
-  }
-}
+export class View extends FlowBox.View {}

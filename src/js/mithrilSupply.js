@@ -1,9 +1,11 @@
+import { getElementPagePos } from "./elementSupply";
 import { Vector, VectorE } from "./vector";
 const calcRect = (startPos, endPos) => {
   const minPos = Vector.min(startPos, endPos);
   const maxPos = Vector.max(startPos, endPos);
   return { pos: minPos, size: Vector.sub(maxPos, minPos) };
 };
+
 export const objEventDrag = (event = {}) => {
   let mousedown = false;
   const mousePos = [0, 0];
@@ -13,8 +15,8 @@ export const objEventDrag = (event = {}) => {
     currentTarget = ev.currentTarget;
 
     VectorE.set(mousePos, ev.pageX, ev.pageY);
-    const rect = currentTarget.getBoundingClientRect();
-    const locPos = Vector.sub(mousePos, [rect.x, rect.y]);
+
+    const locPos = Vector.sub(mousePos, getElementPagePos(currentTarget));
 
     VectorE.set(pinPos, ...locPos);
 
@@ -22,7 +24,7 @@ export const objEventDrag = (event = {}) => {
 
     mousedown = true;
     if (event.start) {
-      event.start({ mousePos, locPos, dragRect });
+      event.start({ mousePos, locPos, pinPos, dragRect });
       ev.stopPropagation();
     }
   };
@@ -33,13 +35,12 @@ export const objEventDrag = (event = {}) => {
       const movePos = Vector.sub(newMousePos, mousePos);
 
       VectorE.set(mousePos, ...newMousePos);
-      const rect = currentTarget.getBoundingClientRect();
-      const locPos = Vector.sub(mousePos, [rect.x, rect.y]);
+      const locPos = Vector.sub(mousePos, getElementPagePos(currentTarget));
 
       const dragRect = calcRect(pinPos, locPos);
 
       if (event.drag) {
-        event.drag({ mousePos, locPos, movePos, dragRect });
+        event.drag({ mousePos, locPos, movePos, pinPos, dragRect });
         //ev.stopPropagation();
       }
     }
@@ -49,13 +50,12 @@ export const objEventDrag = (event = {}) => {
       mousedown = false;
 
       VectorE.set(mousePos, ev.pageX, ev.pageY);
-      const rect = currentTarget.getBoundingClientRect();
-      const locPos = Vector.sub(mousePos, [rect.x, rect.y]);
+      const locPos = Vector.sub(mousePos, getElementPagePos(currentTarget));
 
       const dragRect = calcRect(pinPos, locPos);
 
       if (event.end) {
-        event.end({ mousePos, locPos, dragRect });
+        event.end({ pinPos, mousePos, locPos, pinPos, dragRect });
         //ev.stopPropagation();
       }
     }
@@ -71,7 +71,5 @@ export const objEventDrag = (event = {}) => {
     window.removeEventListener("mouseup", a_end);
     end(ev);
   };
-  return {
-    onmousedown: a_start,
-  };
+  return a_start;
 };

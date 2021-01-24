@@ -6,13 +6,14 @@ export class Presenter extends FlowBlock.Presenter {
     this.addInput("in", 0, "Number");
     this.addInput("in", 1, "Number");
     this.addOutput("out", 0, "Number");
-    this.view.vnodeTitle("add");
+    this.model.setTitle("add");
+    this.view.vnodeTitle(this.model.getTitle());
   }
-  calcExports(inputsValue) {
-    if (inputsValue[0] == undefined || inputsValue[1] == undefined) {
-      return false;
+  valExports() {
+    const inputsValue = this.model.getInputsValue();
+    if (inputsValue[0] !== undefined && inputsValue[1] !== undefined) {
+      this.valTrigger(0, inputsValue[0] + inputsValue[1]);
     }
-    this.trigger(0, inputsValue[0] + inputsValue[1]);
   }
 }
 export class View extends FlowBlock.View {}

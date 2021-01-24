@@ -5,17 +5,20 @@ export class Presenter extends FlowBlock.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
     this.addOutput("out", 0, "Exec");
-    this.view.vnodeTitle("button");
+    this.model.setTitle("button");
+    this.view.vnodeTitle(this.model.getTitle());
   }
-  calcExports(inputsValue) {}
 }
 export class View extends FlowBlock.View {
   viewVnode(content) {
     const vnode = mithril(
       "button",
       {
+        onmousedown: (ev) => {
+          ev.stopPropagation();
+        },
         onclick: (ev) => {
-          this.presenter.triggerFire(0, true);
+          this.presenter.execTrigger(0);
         },
       },
       "按鈕"

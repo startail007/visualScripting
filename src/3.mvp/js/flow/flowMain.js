@@ -1,24 +1,28 @@
 import * as FlowBox from "./flowBox";
-import { objEventDrag } from "../../../js/mithrilSupply";
-import * as FlowSelect from "./flowSelect";
-import * as FlowLine from "./flowLine";
-import mithril from "mithril";
-import { arrayRemove } from "../../../js/supply";
+import * as FlowGraph from "./flowGraph";
+import * as FlowMenu from "./flowMenu";
+import * as FlowMenuItem from "./flowMenuItem";
+import { observable } from "../../../js/observable";
+import { Vector, VectorE } from "../../../js/vector";
 export class Model extends FlowBox.Model {
-  constructor() {
-    super();
-    this.lines = [];
+  init() {
+    super.init();
+    this.graph = null;
+    this.menu = null;
+    this.values = {};
     this.operate = "";
-    this.select = null;
   }
-  addLine(component) {
-    this.lines.push(component);
+  setGraph(component) {
+    this.graph = component;
   }
-  removeLine(component) {
-    arrayRemove(this.lines, component);
+  getGraph() {
+    return this.graph;
   }
-  getLines() {
-    return this.lines.slice();
+  setMenu(component) {
+    this.menu = component;
+  }
+  getMenu() {
+    return this.menu;
   }
   setOperate(val) {
     this.operate = val;
@@ -26,142 +30,135 @@ export class Model extends FlowBox.Model {
   getOperate() {
     return this.operate;
   }
-  setSelect(component) {
-    this.select = component;
+  addValue(key, val) {
+    this.values[key] = observable(val);
   }
-  getSelect() {
-    return this.select;
+  removeValue(key) {
+    this.values[key].unnotification();
+    delete this.values[key];
+  }
+  setValue(key, val) {
+    this.values[key](val);
+  }
+  getValue(key) {
+    return this.values[key]();
+  }
+  addValueNotification(key, callback) {
+    this.values[key].notification(callback);
+  }
+  removeValueNotification(key, callback) {
+    this.values[key].unnotification(callback);
   }
 }
 export class Presenter extends FlowBox.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
-    const select = new FlowSelect.Presenter();
-    select.setParent(this);
-    this.model.setSelect(select);
-    this.on("selectDrag", (move) => {
-      this.model.getSelect().selectRun((el) => {
-        el.movePos(move);
-      });
-    });
+    this.model.addClass("flowMain");
+    this.view.vnodeClass(this.model.getClass());
+
+    const graph = new FlowGraph.Presenter();
+    graph.setParent(this);
+    this.model.setGraph(graph);
+
+    const menu = new FlowMenu.Presenter();
+    menu.setParent(this);
+    this.model.setMenu(menu);
   }
-  connect(outComponent, outNum, inComponent, inNum) {
-    const output = outComponent.model.getOutput(outNum);
-    const input = inComponent.model.getInput(inNum);
-    output.addRelevance(input);
-    const component = new FlowLine.Presenter();
-    component.connection(output, input);
-    component.setParent(this);
-    this.model.addLine(component);
-    output.model.addLine(component);
-    input.model.addLine(component);
-    outComponent.flowRun();
+  setMain(main) {
+    super.setMain(main);
 
-    /*this.view.once("update", () => {
-      component.update();
-    });*/
+    this.model.getGraph().setMain(this);
+    this.model.getMenu().setMain(this);
   }
-  removeLine(line) {
-    const output = line.model.getOutput();
-    const input = line.model.getInput();
-
-    output.removeRelevance(input);
-    this.model.removeLine(line);
-    output.model.removeLine(line);
-    input.model.removeLine(line);
-
-    output.model.getParent().setInputValue(output.model.getIndex(), undefined);
-    output.setState("active", false);
-
-    input.model.getParent().setInputValue(input.model.getIndex(), undefined);
-    input.setState("active", false);
-    input.model.getParent().triggerReset();
-  }
-  viewUpdate() {
-    this.view.vnodeLines(this.model.getLines());
-    this.view.vnodeChildren(this.model.getChildren());
-    this.view.vnodeSelect(this.model.getSelect());
-    this.view.render();
+  changeOperate(operate, oldOperate, ...data) {
+    if (operate == "selectStart") {
+      const graph = this.model.getGraph();
+      const select = graph.model.getSelect();
+      select.unactiveSelectList();
+      if (data[0]) {
+        select.setRect(data[0], [0, 0]);
+        select.setDisplay(true);
+      }
+    } else if (operate == "selectEnd") {
+      const graph = this.model.getGraph();
+      const select = graph.model.getSelect();
+      const selectList = select.calcSelectList(data[0]);
+      if (selectList.length) {
+        select.activeSelectList();
+      }
+      select.setDisplay(false);
+      this.setOperate("");
+    } else if (operate == "connectLineStart") {
+      const graph = this.model.getGraph();
+      const connectLine = graph.model.getConnectLine();
+      connectLine.model.setOutput(data[0]);
+      const graphLoc = graph.view.getLoc();
+      connectLine.setEndPos(Vector.sub(data[1], graphLoc));
+      connectLine.setDisplay(true);
+    } else if (operate == "connectLineEnd") {
+      const graph = this.model.getGraph();
+      const connectLine = graph.model.getConnectLine();
+      connectLine.runConnect();
+      connectLine.clearPut();
+      connectLine.setDisplay(false);
+      this.setOperate("");
+    }
   }
   setOperate(operate, ...data) {
     const oldOperate = this.model.getOperate();
     if (oldOperate != operate) {
       this.model.setOperate(operate);
-      if (oldOperate == "select") {
-        const select = this.model.getSelect();
-        select.setDisplay(false);
-      } else if (oldOperate == "selectActive") {
-        const select = this.model.getSelect();
-        select.unactiveSelectList();
-      } else if (oldOperate == "connectLine") {
-      }
+      this.changeOperate(operate, oldOperate, ...data);
+    } else {
       if (operate == "select") {
-        const select = this.model.getSelect();
-        select.setDisplay(true);
-      } else if (operate == "selectActive") {
-        const select = this.model.getSelect();
-        const selectList = select.calcSelectList(data[0]);
-        if (selectList.length) {
-          select.activeSelectList();
-        } else {
-          this.setOperate("");
-        }
+        const graph = this.model.getGraph();
+        const select = graph.model.getSelect();
+        select.setRect(data[0], data[1]);
       } else if (operate == "connectLine") {
-      } else if (operate == "connectLineEnd") {
+        const graph = this.model.getGraph();
+        const connectLine = graph.model.getConnectLine();
+        const graphLoc = graph.view.getLoc();
+        connectLine.setEndPos(Vector.sub(data[1], graphLoc));
       }
     }
   }
-  setSelectRect(pos, size) {
-    const select = this.model.getSelect();
-    select.setRect(pos, size);
+  viewUpdate() {
+    this.view.vnodeGraph(this.model.getGraph());
+    this.view.vnodeMenu(this.model.getMenu());
+    this.view.render();
   }
-  getOperate() {
-    return this.model.getOperate();
+  getGraph() {
+    return this.model.getGraph();
+  }
+  addValue(key, val) {
+    this.model.addValue(key, val);
+
+    const item = new FlowMenuItem.Presenter({ refName: key });
+    const menu = this.model.getMenu();
+    menu.addChild(item);
+  }
+  removeValue(key) {
+    this.model.removeValue(key);
+
+    /*const item = new FlowMenuItem.Presenter({ refName: key });
+    const menu = this.model.getMenu();
+    menu.removeChild(item);*/
   }
 }
 export class View extends FlowBox.View {
   init() {
-    this.class = "flowMain";
-    this.lines = [];
-    this.select = null;
+    super.init();
+    this.graph = null;
+    this.menu = null;
   }
-  vnodeSelect(select) {
-    //if (select) {
-    this.select = select.view.vnode;
-    /*} else {
-      this.select = null;
-    }*/
+  vnodeGraph(graph) {
+    this.graph = graph.view.vnode;
   }
-  vnodeLines(lines) {
-    this.lines = lines.map((el) => el.view.vnode);
+  vnodeMenu(menu) {
+    this.menu = menu.view.vnode;
   }
   viewVnode(content) {
-    const vnode = [
-      mithril("svg.svg", { width: "100%", height: "100%" }, this.lines),
-      mithril("div.boxs", content ?? this.children),
-      mithril("div.front", this.select),
-    ];
+    const vnode = [this.menu, this.graph];
     return super.viewVnode(vnode);
-  }
-  eventsVnode() {
-    return {
-      ...objEventDrag({
-        start: (ev) => {
-          this.presenter.setSelectRect(ev.dragRect.pos, ev.dragRect.size);
-          this.presenter.setOperate("select");
-        },
-        drag: (ev) => {
-          if (this.presenter.getOperate() == "select") {
-            this.presenter.setSelectRect(ev.dragRect.pos, ev.dragRect.size);
-          }
-        },
-        end: (ev) => {
-          if (this.presenter.getOperate() == "select") {
-            this.presenter.setSelectRect(ev.dragRect.pos, ev.dragRect.size);
-            this.presenter.setOperate("selectActive", this.presenter.getChildren());
-          }
-        },
-      }),
-    };
   }
 }

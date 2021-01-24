@@ -4,12 +4,13 @@ import mithril from "mithril";
 import * as FlowPut from "./flowPut";
 import { arrayRemove } from "../../../js/supply";
 export class Model extends FlowBox.Model {
-  constructor() {
-    super();
+  init() {
+    super.init();
     this.inputs = [];
     this.outputs = [];
     this.inputsValue = [];
     this.type = "";
+    this.title = "";
   }
   addInput(component) {
     this.inputs.push(component);
@@ -41,9 +42,6 @@ export class Model extends FlowBox.Model {
   setInputValue(n, val) {
     this.inputsValue[n] = val;
   }
-  /*getInputValue(n) {
-    return this.inputsValue[n];
-  }*/
   getInputsValue() {
     return this.inputsValue.slice();
   }
@@ -53,42 +51,43 @@ export class Model extends FlowBox.Model {
   getType() {
     return this.type;
   }
+  setTitle(val) {
+    this.title = val;
+  }
+  getTitle() {
+    return this.title;
+  }
+  getAllChildren() {
+    return [...this.inputs, ...this.outputs, ...this.children];
+  }
 }
 export class Presenter extends FlowBox.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
-    this.on("action", (target, data, src) => {
-      this.setInputValue(target.model.getIndex(), data);
-      target.setState("active", true);
-      if (this.model.getType() == "Flow") {
-        this.triggerReset();
-      }
-      const bool = this.calcExports(this.model.getInputsValue()) ?? true;
-      //if (bool) {
-      this.model.getInputs().forEach((el) => {
-        if (el.model.getType() == "Exec") {
-          this.setInputValue(el.model.getIndex(), undefined);
-          el.setState("active", false);
-        }
-      });
-      //}
+    this.model.addClass("flowBlock");
+    this.view.vnodeClass(this.model.getClass());
+    this.model.setTitle("flowBlock");
+    this.view.vnodeTitle(this.model.getTitle());
+  }
+  setMain(main) {
+    super.setMain(main);
+    //const main = this.model.getMain();
+    this.model.getInputs().forEach((el) => {
+      el.setMain(main);
     });
-    this.view.vnodeTitle("flowBlock");
-    this.triggerID = undefined;
+    this.model.getOutputs().forEach((el) => {
+      el.setMain(main);
+    });
   }
-  flowRun() {
-    this.triggerReset();
-    this.calcExports(this.model.getInputsValue());
-  }
-  calcExports(inputsValue) {}
   addInput(name, index, type) {
     if (type == "Exec") {
       this.model.setType("Flow");
     }
     const component = new FlowPut.Presenter();
-    component.setProperty(name, index, type);
+    component.setProperty(name, index, type, "in");
     this.model.addInput(component);
     component.setParent(this);
+    //component.model.setMain(this.model.getMain());
     this.update();
   }
   removeInput(component) {
@@ -100,44 +99,15 @@ export class Presenter extends FlowBox.Presenter {
       this.model.setType("Flow");
     }
     const component = new FlowPut.Presenter();
-    component.setProperty(name, index, type);
+    component.setProperty(name, index, type, "out");
     this.model.addOutput(component);
     component.setParent(this);
+    //component.model.setMain(this.model.getMain());
     this.update();
   }
   removeOutput(component) {
     this.model.removeOutput(component);
     this.update();
-  }
-  trigger(n, data) {
-    const put = this.model.getOutput(n);
-    if (put.model.getType() == "Exec") {
-      this.setState("active", true);
-      put.model.getLines().forEach((el) => {
-        el.setState("active", true);
-      });
-      clearTimeout(this.triggerID);
-      this.triggerID = setTimeout(() => {
-        this.setState("active", false);
-        put.model.getLines().forEach((el) => {
-          el.setState("active", false);
-        });
-      }, 2000);
-    }
-    put.setState("active", true);
-    put.model.getRelevanceList().forEach((el) => {
-      el.model.getParent().fire("action", el, data, put);
-    });
-    if (put.model.getType() == "Exec") {
-      put.setState("active", false);
-    }
-  }
-  triggerFire(n, data) {
-    this.triggerReset();
-    this.trigger(n, data);
-  }
-  setInputValue(n, data) {
-    this.model.setInputValue(n, data);
   }
   triggerReset() {
     const temp = new Set();
@@ -146,7 +116,7 @@ export class Presenter extends FlowBox.Presenter {
       el.model.getRelevanceList().forEach((el) => {
         el.setState("active", false);
         const component = el.model.getParent();
-        component.setInputValue(el.model.getIndex(), undefined);
+        component.model.setInputValue(el.model.getIndex(), undefined);
         temp.add(component);
       });
     });
@@ -155,6 +125,39 @@ export class Presenter extends FlowBox.Presenter {
         el.triggerReset();
       }
     });
+  }
+  valTrigger(n, data) {
+    const put = this.model.getOutput(n);
+    put.setActive(1000);
+    put.model.getRelevanceList().forEach((el) => {
+      el.model.getParent().valAction(el, data, put);
+    });
+  }
+  valAction(target, data, src) {
+    this.model.setInputValue(target.model.getIndex(), data);
+    target.setActive(1000);
+    this.valExports();
+  }
+  valExports() {}
+  execTrigger(n) {
+    const put = this.model.getOutput(n);
+    put.setActive(500);
+    put.model.getRelevanceList().forEach((el) => {
+      el.model.getParent().execAction(el, put);
+    });
+
+    this.setActive(500);
+    put.model.getLines().forEach((el) => {
+      el.setActive(500);
+    });
+  }
+  execAction(target, src) {
+    target.setActive(500);
+    this.execExports();
+  }
+  execExports() {}
+  getAllChildren() {
+    return this.model.getAllChildren();
   }
   viewUpdate() {
     this.view.vnodeInputs(this.model.getInputs());
@@ -172,47 +175,52 @@ export class Presenter extends FlowBox.Presenter {
       });
     });
   }
-  selectStart() {
-    if (!this.model.getState("select")) {
-      const component = this.model.getParent();
-      component.setOperate("");
-      const select = component.model.getSelect();
-      select.setSelectList([this]);
-      component.setOperate("selectActive");
-    }
-  }
-  selectMove(move) {
-    const component = this.model.getParent();
-    component.fire("selectDrag", move);
-  }
   removeInputLines(n) {
     const put = this.model.getInput(n);
     if (put) {
-      const parent = this.model.getParent();
+      const main = this.model.getMain();
+      const graph = main.model.getGraph();
       put.model.getLines().forEach((el) => {
-        parent.removeLine(el);
+        graph.removeLine(el);
       });
     }
   }
   removeOutputLines(n) {
     const put = this.model.getOutput(n);
     if (put) {
-      const parent = this.model.getParent();
+      const main = this.model.getMain();
+      const graph = main.model.getGraph();
       put.model.getLines().forEach((el) => {
-        parent.removeLine(el);
+        graph.removeLine(el);
       });
     }
   }
+  event_dragstart(ev) {
+    if (!this.model.getState("select")) {
+      const main = this.model.getMain();
+      main.setOperate("selectStart");
+      const graph = main.model.getGraph();
+      const select = graph.model.getSelect();
+      select.setSelectList([this]);
+      main.setOperate("selectEnd");
+    }
+  }
+  event_drag(ev) {
+    const main = this.model.getMain();
+    const graph = main.model.getGraph();
+    graph.fire("selectDrag", ev.movePos);
+  }
+  event_onmouseover(ev) {
+    //console.log("aaaa");
+    //ev.stopPropagation();
+  }
 }
 export class View extends FlowBox.View {
-  constructor(presenter) {
-    super(presenter);
+  init() {
+    super.init();
     this.inputs = [];
     this.outputs = [];
     this.title = null;
-  }
-  init() {
-    this.class = "flowBlock";
   }
   vnodeInputs(inputs) {
     this.inputs = inputs.map((el) => el.view.vnode);
@@ -221,7 +229,7 @@ export class View extends FlowBox.View {
     this.outputs = outputs.map((el) => el.view.vnode);
   }
   vnodeTitle(title) {
-    this.title = title;
+    this.title = mithril("div", title);
   }
   viewVnode(content) {
     const vnode = [
@@ -240,14 +248,11 @@ export class View extends FlowBox.View {
         //this.presenter.movePos([100, 0]);
         //this.presenter.removeOutputLines(1);
       },
-      ...objEventDrag({
-        start: () => {
-          this.presenter.selectStart();
-        },
-        drag: (ev) => {
-          this.presenter.selectMove(ev.movePos);
-        },
+      onmousedown: objEventDrag({
+        start: this.presenter.event_dragstart.bind(this.presenter),
+        drag: this.presenter.event_drag.bind(this.presenter),
       }),
+      onmouseover: this.presenter.event_onmouseover.bind(this.presenter),
     };
   }
 }

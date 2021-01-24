@@ -7,14 +7,17 @@ export class Presenter extends FlowBlock.Presenter {
     this.addInput("in", 1, "Number");
     this.addOutput("out", 0, "Exec");
     this.addOutput("out", 1, "Number");
-    this.view.vnodeTitle("setValue");
+    this.model.setTitle("setValue" + " " + this.property.refName);
+    this.view.vnodeTitle(this.model.getTitle());
   }
-  calcExports(inputsValue) {
-    if (inputsValue[0] == undefined || inputsValue[1] == undefined) {
-      return false;
+  execExports() {
+    const inputsValue = this.model.getInputsValue();
+    if (inputsValue[1] !== undefined) {
+      this.valTrigger(1, inputsValue[1]);
+      const main = this.model.getMain();
+      main.model.setValue(this.property.refName, inputsValue[1]);
     }
-    this.trigger(1, inputsValue[1]);
-    this.trigger(0, inputsValue[0]);
+    this.execTrigger(0);
   }
 }
 export class View extends FlowBlock.View {}

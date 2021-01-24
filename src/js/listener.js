@@ -1,50 +1,49 @@
 export default class Listener {
   constructor() {
-    this.listenerList = {};
+    this.callbackList = {};
   }
-  on(type, listener) {
-    if (type && listener) {
-      this.listenerList[type] = this.listenerList[type] ?? [];
-      this.listenerList[type].push(listener);
+  on(type, callback) {
+    if (type && callback) {
+      this.callbackList[type] = this.callbackList[type] ?? [];
+      this.callbackList[type].push(callback);
     }
   }
-  off(type, listener) {
-    if (type && this.listenerList[type]) {
-      if (listener && this.listenerList[type].length > 1) {
-        this.listenerList[type] = this.listenerList[type].filter((el) => el !== listener);
+  off(type, callback) {
+    if (type && this.callbackList[type]) {
+      if (callback && this.callbackList[type].length > 1) {
+        this.callbackList[type] = this.callbackList[type].filter((el) => el !== callback);
       } else {
-        delete this.listenerList[type];
+        delete this.callbackList[type];
       }
     }
   }
   fire(type, ...data) {
-    if (this.listenerList[type]) {
-      return this.listenerList[type].map((el) => el(...data));
+    if (this.callbackList[type]) {
+      return this.callbackList[type].map((el) => el(...data));
     }
   }
   /*get(type, n, ...data) {
     return new Promise((resolve, reject) => {
-      if (this.listenerList[type]) {
-        this.listenerList[type][n ?? 0](resolve, reject, ...data);
+      if (this.callbackList[type]) {
+        this.callbackList[type][n ?? 0](resolve, reject, ...data);
       }
     });
   }*/
   get(type, n, ...data) {
-    if (this.listenerList[type]) {
-      return this.listenerList[type][n ?? 0](...data);
+    if (this.callbackList[type]) {
+      return this.callbackList[type][n ?? 0](...data);
     }
   }
   has(type) {
-    return !!this.listenerList[type];
+    return !!this.callbackList[type];
   }
-  once(type, listener) {
-    if (listener) {
-      const that = this;
-      function callback() {
-        listener.call(that, ...arguments);
-        that.off(type, callback);
-      }
-      this.on(type, callback);
+  once(type, callback) {
+    if (callback) {
+      const c = (...data) => {
+        callback.call(this, ...data);
+        this.off(type, c);
+      };
+      this.on(type, c);
     }
   }
 }

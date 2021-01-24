@@ -3,16 +3,22 @@ export class Model extends FlowBlock.Model {}
 export class Presenter extends FlowBlock.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
-    this.addInput("in", 0, "Number");
-    this._value = 0;
-    this.view.vnodeTitle("watch");
+    this.addInput("in", 0, "Exec");
+    this.addInput("in", 1, "Number");
+    this.addOutput("out", 0, "Exec");
+    this.model.setTitle("watch");
+    this.view.vnodeTitle(this.model.getTitle());
   }
-  calcExports(inputsValue) {
-    if (inputsValue[0] == undefined) {
-      return false;
+  setMain(main) {
+    super.setMain(main);
+    this._value = 0;
+  }
+  execExports() {
+    const inputsValue = this.model.getInputsValue();
+    if (inputsValue[1] !== undefined) {
+      this._value = inputsValue[1];
     }
-    this._value = inputsValue[0];
-    console.log(inputsValue[0]);
+    this.execTrigger(0);
   }
   getValue() {
     return this._value;

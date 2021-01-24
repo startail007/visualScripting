@@ -7,14 +7,19 @@ import { arrayRemove } from "../../../js/supply";
 
 export class Model {
   constructor() {
+    this.init();
+  }
+  init() {
     this.children = [];
+    this.class = [];
     this.style = { pos: [0, 0], size: [0, 0], display: true };
     this.state = { active: false, select: false };
     this.relevanceList = [];
     this.id = Float.guid();
     this.parent = null;
+    this.main = null;
   }
-  getId() {
+  getID() {
     return this.id;
   }
   addChild(component) {
@@ -71,21 +76,42 @@ export class Model {
   getParent() {
     return this.parent;
   }
+  setMain(component) {
+    this.main = component;
+  }
+  getMain() {
+    return this.main;
+  }
   setDisplay(val) {
     this.style.display = val;
   }
+  addClass(val) {
+    this.class.push(val);
+  }
+  getClass(val) {
+    return this.class;
+  }
 }
 export class Presenter extends Listener {
-  constructor() {
+  constructor(property) {
     super();
-    this.updateID = undefined;
+    this.property = property;
     this.init();
-    this.view.vnodeStyle({ display: this.model.getStyleCtx("display") });
   }
   init(modelClass = Model, viewClass = View) {
     this.model = new modelClass();
     this.view = new viewClass(this);
+
+    this.updateID = undefined;
+    this.activeID = undefined;
+    this.view.vnodeStyle({ display: this.model.getStyleCtx("display") });
+
     this.view.vnodeState(this.model.getStates());
+    this.model.addClass("flowBox");
+    this.view.vnodeClass(this.model.getClass());
+  }
+  setMain(component) {
+    this.model.setMain(component);
   }
   setParent(component) {
     this.model.setParent(component);
@@ -133,6 +159,9 @@ export class Presenter extends Listener {
     });
     this.parentUpdate();
   }
+  getAllChildren() {
+    return this.model.getChildren();
+  }
   viewUpdate() {
     this.view.vnodeChildren(this.model.getChildren());
     this.view.render();
@@ -143,8 +172,8 @@ export class Presenter extends Listener {
       component.update();
     }
   }
-  getId() {
-    return this.model.getId();
+  getID() {
+    return this.model.getID();
   }
   addRelevance(component) {
     this.model.addRelevance(component);
@@ -159,11 +188,25 @@ export class Presenter extends Listener {
     this.view.vnodeState(this.model.getStates());
     this.update();
   }
+  addClass(val) {
+    this.model.addClass(val);
+    this.view.vnodeClass(this.model.getClass());
+    this.update();
+  }
   getChildren() {
     return this.model.getChildren();
   }
   getParentView() {
     return this.model.getParent()?.view;
+  }
+  setActive(time = 0) {
+    clearTimeout(this.activeID);
+    this.setState("active", true);
+    if (time && time > 0) {
+      this.activeID = setTimeout(() => {
+        this.setState("active", false);
+      }, time);
+    }
   }
 }
 
@@ -171,40 +214,60 @@ export class View extends vnodeBasic {
   constructor(presenter) {
     super();
     this.presenter = presenter;
+    this.init();
+  }
+  init() {
     this.children = [];
     this.style = {};
     this.events = this.eventsVnode();
-    this.class = "flowBox";
+    this.state = "";
+    this.class = "";
     this._loc = [0, 0];
     this._size = [0, 0];
     this.el = null;
-    this.vnode = mithril.vnode(this, this.presenter.getId());
+    this.vnode = mithril.vnode(this, this.presenter.getID());
     this.once("create", (vnode) => {
       this.el = vnode.dom;
-      const pos = [0, 0];
-      const parentPos = [0, 0];
+      this.reLoc();
       const rect = this.el.getBoundingClientRect();
-      VectorE.set(pos, rect.x, rect.y);
-      const component = this.presenter.getParentView();
-      if (component) {
-        const parentRect = component.el.getBoundingClientRect();
-        VectorE.set(parentPos, parentRect.x, parentRect.y);
-      }
-      VectorE.set(this._loc, ...Vector.sub(pos, parentPos));
       VectorE.set(this._size, rect.width, rect.height);
+
       this.presenter.update();
+
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        const rect = entry.contentRect;
+        if (rect.width != this._size[0] || rect.height != this._size[1]) {
+          VectorE.set(this._size, rect.width, rect.height);
+          this.reLoc();
+          this.presenter.update();
+          this.presenter.getAllChildren().forEach((el) => {
+            el.view.reLoc();
+            el.update();
+          });
+        }
+      });
+      observer.observe(this.el);
     });
-    this.init();
   }
-  init() {}
   getLoc() {
     return this._loc;
   }
   getSize() {
     return this._size;
   }
+  reLoc() {
+    const rect = this.el.getBoundingClientRect();
+    this.clientPos = [rect.x, rect.y];
+    const parentPos = [0, 0];
+    const component = this.presenter.getParentView();
+    if (component) {
+      VectorE.set(parentPos, ...component.clientPos);
+    }
+    VectorE.set(this._loc, ...Vector.sub(this.clientPos, parentPos));
+  }
   render() {
-    this.vnode = mithril.vnode(this, this.presenter.getId());
+    this.vnode = mithril.vnode(this, this.presenter.getID());
     this.setRedraw(true);
   }
   vnodeChildren(children) {
@@ -222,6 +285,9 @@ export class View extends vnodeBasic {
     if (style.display != undefined) {
       this.style.display = style.display ? undefined : "none";
     }
+  }
+  vnodeClass(classList) {
+    this.class = classList.join(" ");
   }
   vnodeState(state) {
     const temp = [];
