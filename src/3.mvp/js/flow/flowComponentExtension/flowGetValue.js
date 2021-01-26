@@ -16,13 +16,17 @@ export class Presenter extends FlowBlock.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
     this.addOutput("out", 0, "Number");
-    this.model.setTitle("getValue" + " " + this.property.refName);
+  }
+  setProperties(properties) {
+    super.setProperties(properties);
+    this.model.setTitle("getValue" + " " + this.model.getProperty("refName"));
     this.view.vnodeTitle(this.model.getTitle());
   }
   setMain(main) {
     super.setMain(main);
-    this._value = main.model.getValue(this.property.refName);
-    main.model.addValueNotification(this.property.refName, (val) => {
+
+    this._value = main.model.getValue(this.model.getProperty("refName"));
+    main.model.addValueNotification(this.model.getProperty("refName"), (val) => {
       this._value = val;
       this.valTrigger(0, this._value);
     });

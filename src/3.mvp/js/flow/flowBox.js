@@ -4,6 +4,7 @@ import { Float } from "../../../js/float";
 import { Vector, VectorE } from "../../../js/vector";
 import Listener from "../../../js/listener";
 import { arrayRemove } from "../../../js/supply";
+import { objEventDrag } from "../../../js/mithrilSupply";
 
 export class Model {
   constructor() {
@@ -18,6 +19,7 @@ export class Model {
     this.id = Float.guid();
     this.parent = null;
     this.main = null;
+    this.properties = {};
   }
   getID() {
     return this.id;
@@ -91,11 +93,16 @@ export class Model {
   getClass(val) {
     return this.class;
   }
+  setProperties(val) {
+    this.properties = val;
+  }
+  getProperty(name) {
+    return this.properties[name];
+  }
 }
 export class Presenter extends Listener {
-  constructor(property) {
+  constructor() {
     super();
-    this.property = property;
     this.init();
   }
   init(modelClass = Model, viewClass = View) {
@@ -115,6 +122,9 @@ export class Presenter extends Listener {
   }
   setParent(component) {
     this.model.setParent(component);
+  }
+  setProperties(properties) {
+    this.model.setProperties(properties);
   }
   addChild(component) {
     this.model.addChild(component);
@@ -207,6 +217,9 @@ export class Presenter extends Listener {
         this.setState("active", false);
       }, time);
     }
+  }
+  getProperty(name) {
+    return this.model.getProperty(name);
   }
 }
 
@@ -306,7 +319,40 @@ export class View extends vnodeBasic {
     );
   }
   eventsVnode() {
-    return {};
+    let onstart = null;
+    if (this.presenter.ondragstart) {
+      onstart = (ev) => {
+        ev.setBundleVerification = (val) => {
+          window.bundleVerification = val;
+        };
+        this.presenter.ondragstart(ev);
+      };
+    }
+    return {
+      onmousedown: (ev) => {
+        this.presenter.onmousedown?.(ev);
+        objEventDrag({
+          start: onstart,
+          drag: this.presenter.ondrag?.bind(this.presenter),
+          end: (ev) => {
+            ev.bundle = window.bundle;
+            delete window.bundleVerification;
+            delete window.bundle;
+            this.presenter.ondragend?.(ev);
+          },
+        })(ev);
+      },
+      onmouseup: (ev) => {
+        this.presenter.onmouseup?.(ev);
+        if (this.presenter.onbundle) {
+          if (!window.bundle) {
+            ev.bundleVerification = window.bundleVerification;
+            window.bundle = this.presenter.onbundle(ev);
+          }
+        }
+      },
+      //onmouseover: this.presenter.onmouseover?.bind(this.presenter),
+    };
   }
   setRedraw(val) {
     this._redraw = val;

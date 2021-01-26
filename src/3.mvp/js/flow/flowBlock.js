@@ -1,5 +1,4 @@
 import * as FlowBox from "./flowBox";
-import { objEventDrag } from "../../../js/mithrilSupply";
 import mithril from "mithril";
 import * as FlowPut from "./flowPut";
 import { arrayRemove } from "../../../js/supply";
@@ -195,24 +194,18 @@ export class Presenter extends FlowBox.Presenter {
       });
     }
   }
-  event_dragstart(ev) {
+  ondragstart(ev) {
     if (!this.model.getState("select")) {
       const main = this.model.getMain();
-      main.setOperate("selectStart");
       const graph = main.model.getGraph();
       const select = graph.model.getSelect();
-      select.setSelectList([this]);
-      main.setOperate("selectEnd");
+      select.selectOne(this);
     }
   }
-  event_drag(ev) {
+  ondrag(ev) {
     const main = this.model.getMain();
     const graph = main.model.getGraph();
     graph.fire("selectDrag", ev.movePos);
-  }
-  event_onmouseover(ev) {
-    //console.log("aaaa");
-    //ev.stopPropagation();
   }
 }
 export class View extends FlowBox.View {
@@ -241,18 +234,5 @@ export class View extends FlowBox.View {
       ]),
     ];
     return super.viewVnode(vnode);
-  }
-  eventsVnode() {
-    return {
-      onclick: () => {
-        //this.presenter.movePos([100, 0]);
-        //this.presenter.removeOutputLines(1);
-      },
-      onmousedown: objEventDrag({
-        start: this.presenter.event_dragstart.bind(this.presenter),
-        drag: this.presenter.event_drag.bind(this.presenter),
-      }),
-      onmouseover: this.presenter.event_onmouseover.bind(this.presenter),
-    };
   }
 }

@@ -39,7 +39,7 @@ export class Model extends FlowBox.Model {
 export class Presenter extends FlowBox.Presenter {
   init(modelClass = Model, viewClass = View) {
     super.init(modelClass, viewClass);
-    this.model.addClass("flowLine");
+    this.model.addClass("flowConnectLine");
     this.view.vnodeClass(this.model.getClass());
     this.view.vnodeLine(this.model.getStartPos(), this.model.getEndPos());
     this.setDisplay(false);
@@ -98,6 +98,27 @@ export class Presenter extends FlowBox.Presenter {
   clearPut() {
     this.model.setOutput(null);
     this.model.setInput(null);
+  }
+  dragstart(startComponent, endPos) {
+    this.model.setOutput(startComponent);
+    this.setEndPos(endPos);
+    this.setDisplay(true);
+    const main = this.model.getMain();
+    main.setOperate("connectLine");
+    this.setState("active", true);
+  }
+  drag(endPos) {
+    this.setEndPos(endPos);
+  }
+  dragend() {
+    if (this.model.getState("active")) {
+      this.setState("active", false);
+      this.runConnect();
+      this.clearPut();
+      this.setDisplay(false);
+      const main = this.model.getMain();
+      main.setOperate("");
+    }
   }
 }
 export class View extends FlowBox.View {

@@ -1,5 +1,4 @@
 import * as FlowBox from "./flowBox";
-import { objEventDrag } from "../../../js/mithrilSupply";
 import mithril from "mithril";
 import { arrayRemove } from "../../../js/supply";
 import { Vector, VectorE } from "../../../js/vector";
@@ -64,29 +63,35 @@ export class Presenter extends FlowBox.Presenter {
       return Vector.add(loc, [size[0] - 10, 0.5 * size[1]]);
     }
   }
-  event_dragstart(ev) {
+  ondragstart(ev) {
     if (this.model.getDir() == "out") {
       const main = this.model.getMain();
-      main.setOperate("connectLineStart", this, ev.mousePos);
+      const graph = main.model.getGraph();
+      const connectLine = graph.model.getConnectLine();
+      const graphLoc = graph.view.getLoc();
+      connectLine.dragstart(this, Vector.sub(ev.mousePos, graphLoc));
+      ev.setBundleVerification("connectLine");
     }
   }
-  event_drag(ev) {
+  ondrag(ev) {
     const main = this.model.getMain();
-    main.setOperate("connectLine", this, ev.mousePos);
+    const graph = main.model.getGraph();
+    const connectLine = graph.model.getConnectLine();
+    const graphLoc = graph.view.getLoc();
+    connectLine.drag(Vector.sub(ev.mousePos, graphLoc));
   }
-  event_dragend(ev) {
+  ondragend(ev) {
     const main = this.model.getMain();
-    main.setOperate("connectLineEnd");
+    const graph = main.model.getGraph();
+    const connectLine = graph.model.getConnectLine();
+    if (ev.bundle) {
+      connectLine.model.setInput(ev.bundle);
+    }
+    connectLine.dragend();
   }
-  event_onmouseup() {
-    const main = this.model.getMain();
-    if (main.model.getOperate() == "connectLine") {
-      if (this.model.getDir() == "in") {
-        const graph = main.model.getGraph();
-        const connectLine = graph.model.getConnectLine();
-        connectLine.model.setInput(this);
-        connectLine.update();
-      }
+  onbundle(ev) {
+    if (ev.bundleVerification == "connectLine") {
+      return this;
     }
   }
 }
@@ -95,16 +100,6 @@ export class View extends FlowBox.View {
     super.init();
     this.point = null;
     this.text = null;
-  }
-  eventsVnode() {
-    return {
-      onmouseup: this.presenter.event_onmouseup.bind(this.presenter),
-      onmousedown: objEventDrag({
-        start: this.presenter.event_dragstart.bind(this.presenter),
-        drag: this.presenter.event_drag.bind(this.presenter),
-        end: this.presenter.event_dragend.bind(this.presenter),
-      }),
-    };
   }
   vnodePoint(type) {
     this.point = mithril("div.point", { class: type });

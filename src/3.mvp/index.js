@@ -11,10 +11,12 @@ mithril.mount(el, flowMain.view);
 
 flowMain.addValue("a0", 1);
 flowMain.addValue("a1", 1);
+flowMain.addValue("a2", 1000);
 
 const graph = flowMain.getGraph();
 
-const flowVnode0 = new Components.FlowGetValue.Presenter({ refName: "a0" });
+const flowVnode0 = new Components.FlowGetValue.Presenter();
+flowVnode0.setProperties({ refName: "a0" });
 graph.addChild(flowVnode0);
 flowVnode0.setPos([200, 200]);
 
@@ -22,7 +24,8 @@ const flowVnode1 = new Components.FlowAdd.Presenter();
 graph.addChild(flowVnode1);
 flowVnode1.setPos([500, 200]);
 
-const flowVnode2 = new Components.FlowGetValue.Presenter({ refName: "a1" });
+const flowVnode2 = new Components.FlowGetValue.Presenter();
+flowVnode2.setProperties({ refName: "a1" });
 graph.addChild(flowVnode2);
 flowVnode2.setPos([200, 400]);
 
@@ -34,7 +37,8 @@ const flowVnode4 = new Components.FlowButton.Presenter();
 graph.addChild(flowVnode4);
 flowVnode4.setPos([100, 600]);
 
-const flowVnode5 = new Components.FlowSetValue.Presenter({ refName: "a0" });
+const flowVnode5 = new Components.FlowSetValue.Presenter();
+flowVnode5.setProperties({ refName: "a0" });
 graph.addChild(flowVnode5);
 flowVnode5.setPos([400, 600]);
 

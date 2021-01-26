@@ -1,8 +1,7 @@
 import * as FlowBox from "./flowBox";
-import { objEventDrag } from "../../../js/mithrilSupply";
 import * as FlowSelect from "./flowSelect";
 import * as FlowPutLine from "./flowPutLine";
-import * as FlowLine from "./flowLine";
+import * as FlowConnectLine from "./flowConnectLine";
 import mithril from "mithril";
 import { arrayRemove } from "../../../js/supply";
 import { observable } from "../../../js/observable";
@@ -66,7 +65,7 @@ export class Presenter extends FlowBox.Presenter {
     select.setParent(this);
     this.model.setSelect(select);
 
-    const connectLine = new FlowLine.Presenter();
+    const connectLine = new FlowConnectLine.Presenter();
     connectLine.setParent(this);
     this.model.setConnectLine(connectLine);
 
@@ -79,8 +78,8 @@ export class Presenter extends FlowBox.Presenter {
   setMain(main) {
     super.setMain(main);
 
-    this.model.getSelect().setMain(this.model.getMain());
-    this.model.getConnectLine().setMain(this.model.getMain());
+    this.model.getSelect().setMain(main);
+    this.model.getConnectLine().setMain(main);
   }
   addValue(key, val) {
     this.model.addValue(key, val);
@@ -145,20 +144,22 @@ export class Presenter extends FlowBox.Presenter {
     component.setMain(this.model.getMain());
     super.addChild(component);
   }
-  event_dragstart(ev) {
-    const main = this.model.getMain();
-    main.setOperate("selectStart", ev.dragRect.pos);
+  ondragstart(ev) {
+    const select = this.model.getSelect();
+    select.dragstart(ev.locPos);
   }
-  event_drag(ev) {
-    const main = this.model.getMain();
-    main.setOperate("select", ev.dragRect.pos, ev.dragRect.size);
+  ondrag(ev) {
+    const select = this.model.getSelect();
+    select.drag(ev.locPos);
   }
-  event_dragend(ev) {
-    const main = this.model.getMain();
-    main.setOperate("selectEnd", this.model.getChildren());
+  ondragend(ev) {
+    const select = this.model.getSelect();
+    select.dragend(this.model.getChildren());
   }
-  event_onmouseover() {
-    //console.log("bbbbbb");
+  onbundle(ev) {
+    if (ev.bundleVerification == "newComponent") {
+      return this;
+    }
   }
 }
 export class View extends FlowBox.View {
@@ -187,15 +188,5 @@ export class View extends FlowBox.View {
       ),
     ];
     return super.viewVnode(vnode);
-  }
-  eventsVnode() {
-    return {
-      onmousedown: objEventDrag({
-        start: this.presenter.event_dragstart.bind(this.presenter),
-        drag: this.presenter.event_drag.bind(this.presenter),
-        end: this.presenter.event_dragend.bind(this.presenter),
-      }),
-      onmouseover: this.presenter.event_onmouseover.bind(this.presenter),
-    };
   }
 }

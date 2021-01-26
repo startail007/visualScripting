@@ -64,7 +64,7 @@ svg.svg {
     }
   }
 }
-svg.flowLine {
+svg.flowConnectLine {
   position: absolute;
   display: block;
   left: 0px;
@@ -89,11 +89,29 @@ svg.flowLine {
 }
 .flowMenuItem {
   position: relative;
-  display: block;
+  display: flex;
   color: #fff;
   background-color: rgb(18, 19, 18);
   margin: 1px 0px;
-  padding: 10px 5px;
+  padding: 5px;
+  //height: 50px;
+  align-items: center;
+  box-sizing: border-box;
+  .title {
+    padding: 0px 5px;
+  }
+  .inputText {
+    flex: 1;
+    height: 100%;
+  }
+}
+.flowMenuItemC {
+  position: relative;
+  display: block;
+  padding: 5px;
+  background-color: rgb(19, 19, 19);
+  margin: 2px;
+  border: 1px solid rgb(97, 97, 97);
 }
 /*
 .flowMenuValueButton {

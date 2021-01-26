@@ -24,10 +24,10 @@ module.exports = {
   },
   entry: {
     //main: "./src/js/index.js",
-    "./1.flowGraph/js/main": "./src/1.flowGraph/index.js",
-    "./1.flowGraph-1/js/main": "./src/1.flowGraph-1/index.js",
-    "./3.mvp/js/main": "./src/3.mvp/index.js",
-    "./2.litegraph/js/main": "./src/2.litegraph/index.js",
+    "1.flowGraph/main": "./src/1.flowGraph/index.js",
+    "1.flowGraph-1/main": "./src/1.flowGraph-1/index.js",
+    "2.litegraph/main": "./src/2.litegraph/index.js",
+    "3.mvp/main": "./src/3.mvp/index.js",
   },
   output: {
     path: path.resolve(__dirname, "./dist/"),
@@ -59,7 +59,9 @@ module.exports = {
           {
             loader: MiniCssExtractPlugin.loader,
             options: {
-              publicPath: "../",
+              //publicPath: "../",
+              outputPath: "css/",
+              publicPath: "../css",
             },
           },
           "css-loader",
@@ -72,7 +74,9 @@ module.exports = {
           {
             loader: MiniCssExtractPlugin.loader,
             options: {
-              publicPath: "../",
+              //publicPath: "../",
+              outputPath: "css/",
+              publicPath: "../css",
             },
           },
           "css-loader",
@@ -156,7 +160,7 @@ module.exports = {
       //cleanOnceBeforeBuildPatterns: ["./js/*", "./css/*", "./fonts/*", "./index,html"],
       cleanOnceBeforeBuildPatterns: ["./*"],
     }),
-    new MiniCssExtractPlugin({ filename: "css/[name].[hash].css" }),
+    new MiniCssExtractPlugin({ filename: "[name].[hash].css" }),
     new HtmlWebpackPlugin({
       title: "視覺語言系統",
       template: "./src/index.html",
@@ -169,28 +173,28 @@ module.exports = {
       template: "./src/1.flowGraph/index.html",
       filename: "1.flowGraph/index.html",
       hash: true,
-      chunks: ["./1.flowGraph/js/main"],
+      chunks: ["1.flowGraph/main"],
     }),
     new HtmlWebpackPlugin({
       title: "1.flowGraph-1",
       template: "./src/1.flowGraph-1/index.html",
       filename: "1.flowGraph-1/index.html",
       hash: true,
-      chunks: ["./1.flowGraph-1/js/main"],
+      chunks: ["1.flowGraph-1/main"],
     }),
     new HtmlWebpackPlugin({
       title: "2.litegraph",
       template: "./src/2.litegraph/index.html",
       filename: "2.litegraph/index.html",
       hash: true,
-      chunks: ["./2.litegraph/js/main"],
+      chunks: ["2.litegraph/main"],
     }),
     new HtmlWebpackPlugin({
       title: "3.mvp",
       template: "./src/3.mvp/index.html",
       filename: "3.mvp/index.html",
       hash: true,
-      chunks: ["./3.mvp/js/main"],
+      chunks: ["3.mvp/main"],
     }),
     new OptimizeCssAssetsWebpackPlugin(),
   ],

@@ -1,3 +1,5 @@
+import { Vector } from "./vector";
+
 export const isMobile = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
@@ -31,4 +33,9 @@ export const arrayRemove = (array, val, callback) => {
       return true;
     }
   });
+};
+export const calcRect = (startPos, endPos) => {
+  const minPos = Vector.min(startPos, endPos);
+  const maxPos = Vector.max(startPos, endPos);
+  return { pos: minPos, size: Vector.sub(maxPos, minPos) };
 };

@@ -70,56 +70,10 @@ export class Presenter extends FlowBox.Presenter {
     this.model.getGraph().setMain(this);
     this.model.getMenu().setMain(this);
   }
-  changeOperate(operate, oldOperate, ...data) {
-    if (operate == "selectStart") {
-      const graph = this.model.getGraph();
-      const select = graph.model.getSelect();
-      select.unactiveSelectList();
-      if (data[0]) {
-        select.setRect(data[0], [0, 0]);
-        select.setDisplay(true);
-      }
-    } else if (operate == "selectEnd") {
-      const graph = this.model.getGraph();
-      const select = graph.model.getSelect();
-      const selectList = select.calcSelectList(data[0]);
-      if (selectList.length) {
-        select.activeSelectList();
-      }
-      select.setDisplay(false);
-      this.setOperate("");
-    } else if (operate == "connectLineStart") {
-      const graph = this.model.getGraph();
-      const connectLine = graph.model.getConnectLine();
-      connectLine.model.setOutput(data[0]);
-      const graphLoc = graph.view.getLoc();
-      connectLine.setEndPos(Vector.sub(data[1], graphLoc));
-      connectLine.setDisplay(true);
-    } else if (operate == "connectLineEnd") {
-      const graph = this.model.getGraph();
-      const connectLine = graph.model.getConnectLine();
-      connectLine.runConnect();
-      connectLine.clearPut();
-      connectLine.setDisplay(false);
-      this.setOperate("");
-    }
-  }
   setOperate(operate, ...data) {
     const oldOperate = this.model.getOperate();
     if (oldOperate != operate) {
       this.model.setOperate(operate);
-      this.changeOperate(operate, oldOperate, ...data);
-    } else {
-      if (operate == "select") {
-        const graph = this.model.getGraph();
-        const select = graph.model.getSelect();
-        select.setRect(data[0], data[1]);
-      } else if (operate == "connectLine") {
-        const graph = this.model.getGraph();
-        const connectLine = graph.model.getConnectLine();
-        const graphLoc = graph.view.getLoc();
-        connectLine.setEndPos(Vector.sub(data[1], graphLoc));
-      }
     }
   }
   viewUpdate() {
@@ -133,7 +87,8 @@ export class Presenter extends FlowBox.Presenter {
   addValue(key, val) {
     this.model.addValue(key, val);
 
-    const item = new FlowMenuItem.Presenter({ refName: key });
+    const item = new FlowMenuItem.Presenter();
+    item.setProperties({ refName: key });
     const menu = this.model.getMenu();
     menu.addChild(item);
   }

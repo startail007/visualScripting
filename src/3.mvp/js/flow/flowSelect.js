@@ -1,5 +1,5 @@
-import { objEventDrag } from "../../../js/mithrilSupply";
-import { rectCollisionRect } from "../../../js/supply";
+import { calcRect, rectCollisionRect } from "../../../js/supply";
+import { VectorE } from "../../../js/vector";
 import * as FlowBox from "./flowBox";
 export class Model extends FlowBox.Model {
   init() {
@@ -19,6 +19,7 @@ export class Presenter extends FlowBox.Presenter {
     this.model.addClass("selectRect");
     this.view.vnodeClass(this.model.getClass());
     this.setDisplay(false);
+    this.pinPos = [0, 0];
   }
   calcSelectList(list) {
     if (list) {
@@ -57,6 +58,36 @@ export class Presenter extends FlowBox.Presenter {
   }
   viewUpdate() {
     this.view.render();
+  }
+  dragstart(pos) {
+    this.unactiveSelectList();
+    this.setRect(pos, [0, 0]);
+    this.setDisplay(true);
+    VectorE.set(this.pinPos, ...pos);
+    const main = this.model.getMain();
+    main.setOperate("select");
+    this.setState("active", true);
+  }
+  drag(pos) {
+    const rect = calcRect(this.pinPos, pos);
+    this.setRect(rect.pos, rect.size);
+  }
+  dragend(children) {
+    if (this.model.getState("active")) {
+      this.setState("active", false);
+      const selectList = this.calcSelectList(children);
+      if (selectList.length) {
+        this.activeSelectList();
+      }
+      this.setDisplay(false);
+      const main = this.model.getMain();
+      main.setOperate("");
+    }
+  }
+  selectOne(component) {
+    this.unactiveSelectList();
+    this.setSelectList([component]);
+    this.activeSelectList();
   }
 }
 export class View extends FlowBox.View {}

@@ -48,7 +48,7 @@ export class Presenter extends FlowBox.Presenter {
     }
     this.view.render();
   }
-  event_circle_onclick() {
+  circle_onclick() {
     const main = this.model.getMain();
     const graph = main.model.getGraph();
     graph.removeLine(this);
@@ -95,7 +95,7 @@ export class View extends FlowBox.View {
             cy: this.center[1],
             r: 10,
             fill: "#09c",
-            onclick: this.presenter.event_circle_onclick.bind(this.presenter),
+            onclick: this.presenter.circle_onclick.bind(this.presenter),
           }),
         ]
       ),

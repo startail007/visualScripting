@@ -1,10 +1,6 @@
 import { getElementPagePos } from "./elementSupply";
+import { calcRect } from "./supply";
 import { Vector, VectorE } from "./vector";
-const calcRect = (startPos, endPos) => {
-  const minPos = Vector.min(startPos, endPos);
-  const maxPos = Vector.max(startPos, endPos);
-  return { pos: minPos, size: Vector.sub(maxPos, minPos) };
-};
 
 export const objEventDrag = (event = {}) => {
   let mousedown = false;
